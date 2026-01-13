@@ -1,0 +1,178 @@
+function [turbulenceData] = computeCn2(data, samplePeriod, press_time, press)
+  % function [turbulenceData] = computeCn2(data, samplePeriod, press_time, press)
+  %
+  % Marine Wave Boundary Layer Analysis
+  % Script for computing Cn2 from Cv2
+  %
+  % Inputs:
+  %   data 		- structure variable from ATI or Gill sonic, or single DPL ATI (e.g., H1)
+  %   samplePeriod	- averaging period (s)
+  %   press_time, press	- time and pressure (mBar), covering time of velocity data array
+  %			  to use a single pressure value, enter [starttime endtime],[1021 1021]
+  %			  -or- pass empty sets and will default to value 1021 mBar
+  % 
+  % Based on code from Dr. Nai-Hang Kwong, NP Photonics / U. Arizona
+  % Revised by Miles A. Sundermeyer, 10/9/2022
+  % Revised by Kayhan Ulgen, 10/20/2022
+  % Revised by Kayhan Ulgen, 03/15/2023
+  % Revised by Miles A. Sundermeyer, 4/15/2023 - updated header, dropped samplingFrequency as input variable,
+  %	added pressure time and time series as (optional) input
+  % Revised by Miles A. Sundermeyer, 6/8/2023 - added computing mean and var of RelHumid when it exists
+  % Revised by Tyler Knapp, 01/06/2025 - Adding type check and typecast for RelHumid for case where it is an integer
+  % Revised by Tyler Knapp, 09/15/2025 - Adding WindSpd_mean and WindDir_mean converted from northward to northerly
+  % Revised by Tyler Knapp, 09/24/2025 - Changed T_Air to T_Sonic
+  % Revised by Tyler Knapp, 09/30/2025 - Modifications to make compatable with time based ensembleAverage, 
+  %                                      now ensembleAverageWithIndex. Also added support for double based date_time. 
+  %                                     NOTE: Will return a date_time_mean as a datetime obj no metter the input type
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % Parse data, depending on what type of data file is being loaded
+  if ~isempty(data.date_time)
+    date_timeIsdatetime = 0;
+    if ~(class(data.date_time) == "double")
+      date_time = convertTo(data.date_time,'posixtime'); % convert from date_time to double format
+      date_timeIsdatetime = 1;
+    else
+      date_time = data.date_time;
+    end
+    u = real(data.u);			% (m/s) u velocity
+    v = real(data.v);			% (m/s) v velocity
+    w = real(data.w;			% (m/s) w velocity
+    T = real(data.T_Sonic;			% (deg C) sonic temperature
+    if contains(class(u), class(v)) && contains(class(u), class(w)) && contains(class(u), class(T)) % check if data shares the same type (single/double)
+      if isfield(data,'RelHumid')
+        if class(u) == 'single'
+          RH = single(data.RelHumid);		% (%) relative humidity
+        elseif class(u) == 'double'
+          RH = double(data.RelHumid);		% (%) relative humidity
+        end
+      end
+    else
+      error("ERROR: In computeCn2, Data types u, v, w, & T are not the same")
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Only run this if passed non-empty variables
+    if ~isempty(u) && ~isempty(v) && ~isempty(w) && ~isempty(T)
+      samplingFrequency = round(1/(median(diff(date_time),'omitnan')));	% (Hz)
+      [date_time_ens,index] = getdatetimeIndex(date_time, samplePeriod, samplingFrequency);
+      if ~isempty(date_time_ens) % Catches case where vars are all NaNs
+        % check that T is in C, not already in K
+        if median(T)>200
+          warning('Temperature appears to already be in Kelvin ...')
+          T = T - 273.15;		% will convert back to Kelvin below
+        end
+        
+      
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Ensemble Average for each of the 6 variables, time, (u,v,w), and T
+        [u_ens,u_var] = ensembleAverageWithIndex(u, index);
+        [v_ens,v_var] = ensembleAverageWithIndex(v, index);
+        [w_ens,w_var] = ensembleAverageWithIndex(w, index);
+        [T_ens,T_var] = ensembleAverageWithIndex(T, index);
+        if isfield(data,'RelHumid')
+          [RH_ens,RH_var] = ensembleAverageWithIndex(RH, index);
+        end
+      
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Compute Cn2 
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        T_flux = zeros(1, length(T));
+        for n = 1:length(T)
+          idx = ceil(n/(samplingFrequency * samplePeriod));
+          idx = min(idx,length(T_ens));
+          T_flux(n) = T(n) - T_ens(idx);
+        end
+      
+        T_ens = T_ens + 273.15;		% convert deg C to deg K
+        T_flux_diff = (diff(T_flux)).^2;
+        T_flux_diff(end+1) = T_flux_diff(end);
+        [T_flux_struct,~] = ensembleAverageWithIndex(T_flux_diff, index);
+      
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        uvw_ens = sqrt(u_ens.^2 + v_ens.^2 + w_ens.^2);
+        [WindDir_ens,~] = cart2pol(v_ens,u_ens);
+        WindDir_ens = WindDir_ens.*(180/3.14159); % Convert to degrees
+        WindDir_ens = WindDir_ens - 180; % Convert from northward to northerly
+        WindDir_ens = mod(WindDir_ens,360); % Convert to 0-360
+        % Temperature Structure Parameter
+        CT2 =  T_flux_struct.*((uvw_ens./samplingFrequency)).^(-2/3);
+      
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        if isempty(press) 			% assume fixed value of P and hence P_ens
+          Wx_press_ens = 1021;
+        elseif length(press) == length(u) 	% assume array passed has same date_time as data
+          [~,Wx_press_ens,~] = ensembleAverageWithIndex(press, index);
+        else					% assume need to interpolate press onto date_time	
+          Wx_press = interp1(press_time, press, date_time, 'linear');
+          [~,Wx_press_ens,~] = ensembleAverageWithIndex(Wx_press, index);
+        end
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Cn2 calculation from CT2, <P>, and <T>
+        Cn2 = CT2.* ((79 * 10^-6) * (Wx_press_ens./T_ens.^2)).^2;
+      
+        % Tatarski Power Law Model to estimate Cn^2 vertical profile.T_ens
+        % Cn2_vertical = Cn2.* ((data.elevation + referenceHeight)/referenceHeight)^(-4/3);
+      
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Cv2 calculation
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        windflux = zeros(1, length(v));
+        for n = 1:length(v)
+          idx = ceil(n/(samplingFrequency*samplePeriod));
+          idx = min(idx,length(u_ens));
+          windflux(n) = ((v_ens(idx) .* (v(n) - v_ens(idx))) ...
+		         + (u_ens(idx).*(u(n) - u_ens(idx)))) ./ (u_ens(idx).^2+v_ens(idx).^2).^0.5;
+        end
+      
+        windflux = windflux;
+        windflux_diff = (diff(windflux)).^2;
+        windflux_diff(end+1) = windflux_diff(end);
+        [windflux_struct,~] = ensembleAverageWithIndex(windflux_diff, index);
+      
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Cv2 calculation from windflux_struct and <V>
+        CV2 =  windflux_struct.*((uvw_ens./samplingFrequency)).^(-2/3);
+        
+        % Convert date_time for insert_nan_matrix
+        date_time_ens = datetime(date_time_ens,'convertFrom','epochtime');
+    
+        turbulenceData.date_time = date_time_ens;
+        turbulenceData.WindSpd_mean = uvw_ens;		% (m/s)
+        turbulenceData.WindDir_mean = WindDir_ens; % (Compass deg.)
+        turbulenceData.u_mean = u_ens;		% (m/s)
+        turbulenceData.v_mean = v_ens;		% (m/s)
+        turbulenceData.w_mean = w_ens;		% (m/s)
+        turbulenceData.T_mean = T_ens - 273.15;	% (C)
+        if isfield(data,'RelHumid')
+          turbulenceData.RelHumid_mean = RH_ens;% (%)
+        end
+      
+        turbulenceData.u_var = u_var;		% (m/s)
+        turbulenceData.v_var = v_var;		% (m/s)
+        turbulenceData.w_var = w_var;		% (m/s)
+        turbulenceData.T_var = T_var - 273.15;	% (C)
+        if isfield(data,'RelHumid')
+          turbulenceData.RelHumid_var = RH_var;% (%)
+        end
+      
+        turbulenceData.CT2 = CT2;
+        turbulenceData.Cn2 = Cn2;
+        turbulenceData.CV2 = CV2;
+    
+        turbulenceData = insert_nan_matrix(turbulenceData,'turbulence',20);
+        
+        % change date_time to date_time_mean after insert_nan_matrix to avoid errors
+        turbulenceData.date_time_mean = turbulenceData.date_time;
+        turbulenceData = rmfield(turbulenceData,"date_time");
+      end
+    end
+  end
+  % Catch all above cases
+  if ~exist('turbulenceData')
+    if isfield(data,'RelHumid')
+      turbulenceData = struct('date_time_mean',[],'WindSpd_mean',[],'WindDir_mean',[],'u_mean',[],'v_mean',[],'w_mean',[],'T_mean',[],'RelHumid_mean',[],'u_var',[],'v_var',[],'w_var',[],'T_var',[],'RelHumid_var',[],'CT2',[],'Cn2',[],'CV2',[]);
+    else
+      turbulenceData = struct('date_time_mean',[],'WindSpd_mean',[],'WindDir_mean',[],'u_mean',[],'v_mean',[],'w_mean',[],'T_mean',[],'u_var',[],'v_var',[],'w_var',[],'T_var',[],'CT2',[],'Cn2',[],'CV2',[]);
+    end
+  end
+end

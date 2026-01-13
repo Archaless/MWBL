@@ -1,0 +1,159 @@
+% get_File_Date.m:
+% Reads dataStream and returns datetime object of filenames
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   'dataStream'
+%     'subdataStream'
+
+%   'Ambilabs_2WIN'
+%   'Apogee'
+%     '3238'
+%     '3239'
+%   'AQMesh'
+%     '2451070'
+%     '2451071'
+%   'DPL
+%     'SMAST'
+%     'CBC'
+%     'TestRack'
+%   'Ecotech_M9003'
+%   'EPA_PM25'
+%     'FallRiver'
+%     'Narragansett'
+%   'Lattice'        NOTE: Pass in as: get_File_Date(fileName, 'Lattice', {'SMAST';'ATI'})
+%     'SMAST'
+%       'ATI'
+%       'DataQ'
+%       'EnclosureTemp'
+%       'Gill'
+%       'Young'
+%       'NetRadiometer'
+%       'Pyranometer'
+%       'HMP60_Upr'
+%       'HMP60_Lwr'
+%     'CBC'
+%       'ATI'
+%       'DataQ'
+%       'EnclosureTemp'
+%       'Young'
+%       'NetRadiometer'
+%       'Pyranometer'
+%       'HMP60'
+%   'KZScintillometer'
+%   'MZA_DELTA'
+%   'NBAirport'
+%   'NOAA_WaterT'
+%   'OnsetHOBO'
+%     '21265947' (SMAST)
+%     '21265946' (CBC)
+%   'RainwisePortLog'
+%     '13448' --or-- 'CBC'		% deployed at SMAST prior to 9/21/2021, then moved to CBC
+%     '13449' --or-- 'SMAST'
+
+% Note, pass-in [] for substream if not needed for a particular data set.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Created  by Tyler Knapp, 2025/09/09
+% Modified by Tyler Knapp, 2025/09/23 - Added Young, NetRadiometer, Pyranometer, and HMP60 subdataStream(s)
+% modified by Tyler Knapp, 2025/10/28 - Added functionality to remove appened numbers
+  % NOTE: This will now allow raw2mat scripts to processed appended numbers,
+  % follow up with combine_Duplicates.m to handle these files.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function fileDate = get_File_Date(fileName, dataStream, subdataStream)
+fileDate = [];
+
+if fileName == "." || isempty(fileName
+  warning('Warining: In get_File_Date given filename was blank')
+  return
+end
+
+  fileName = strrep(fileName,'.xlsx','');
+  fileName = strrep(fileName,'.csv','');
+  fileName = strrep(fileName,'.txt','');
+  fileName = strrep(fileName,'.dat','');
+  fileName = strrep(fileName,'.log','');
+  fileName = strrep(fileName,'.mat','');
+  
+  if fileName(end-1) == "_" % Assume this means there is a number appended
+    fileName = fileName(1:end-2); % Remove appended number for below
+  end
+
+  switch dataStream
+  case 'Ambilabs_2WIN'			% Checked and Working; same file name format for Ecotech  nephelometer
+    fileDate = @(fnm) datetime(fnm(end-12:end),'InputFormat','yyyyMMdd HHmm');
+  case 'Apogee' 		% Checked and working; same file name format for both SMAST and CBC
+    fileDate = @(fnm) datetime(fnm(end-7:end),'InputFormat','yyyyMMdd'); 
+  case 'AQMesh'			% Checked and Working;
+    fileDate = @(fnm) datetime(fnm(end-13:end),'InputFormat','yyyyMMddHHmmss');
+  case 'DPL' 			% Checked and Working
+    fileDate = @(fnm) datetime(fnm(end-16:end),'InputFormat','yy-MM-dd-HH-mm-ss'); 
+  case 'Ecotech_M9003'			% Checked and Working
+    fileDate = @(fnm) datetime(fnm(end-12:end),'InputFormat','yyyyMMdd HHmm');
+  case 'EPA_PM25'			% Checked and Working;
+    fileDate = @(fnm) datetime(fnm(1:4),'InputFormat','yyyy');
+  case 'KZScintillometer' 		% Checked and Working
+    fileDate = @(fnm) datetime(fnm(1:8),'InputFormat','yyyyMMdd');
+  case 'Lattice'
+    switch subdataStream{1}
+    case 'SMAST'
+      switch subdataStream{2}
+      case 'ATI' 			% Checked and working
+        fileDate = @(fnm) datetime(fnm(end-9:end),'InputFormat','yyyy-MM-dd');
+      case 'DataQ' 			% checked and working
+        fileDate = @(fnm) datetime([fnm(end-18:end-9),fnm(end-7:end)],'InputFormat','yyyy-MM-ddHH-mm-SS');
+      case 'EnclosureTemp' 		% No Data
+	      error('Error: Station1 EnclosureTemp not converted to .mat')
+      case 'Gill' 			% checked and working
+        fileDate = @(fnm) datetime(fnm(end-9:end),'InputFormat','yyyy-MM-dd');
+      case 'Young'
+        fileDate = @(fnm) datetime([fnm(end-18:end-9),fnm(end-7:end)],'InputFormat','yyyy-MM-ddHH-mm-SS');
+      case 'NetRadiometer'
+        fileDate = @(fnm) datetime([fnm(end-18:end-9),fnm(end-7:end)],'InputFormat','yyyy-MM-ddHH-mm-SS');
+      case 'Pyranometer'
+        fileDate = @(fnm) datetime([fnm(end-18:end-9),fnm(end-7:end)],'InputFormat','yyyy-MM-ddHH-mm-SS');
+      case 'HMP60_Upr'
+        fileDate = @(fnm) datetime([fnm(end-18:end-9),fnm(end-7:end)],'InputFormat','yyyy-MM-ddHH-mm-SS');
+      case 'HMP60_Lwr'
+        fileDate = @(fnm) datetime([fnm(end-18:end-9),fnm(end-7:end)],'InputFormat','yyyy-MM-ddHH-mm-SS');
+      end
+    case 'CBC'
+      switch subdataStream{2}
+      case 'ATI' 			% Checked and working
+        fileDate = @(fnm) datetime(fnm(end-9:end),'InputFormat','yyyy-MM-dd');
+      case 'DataQ' 			% checked and working
+        fileDate = @(fnm) datetime([fnm(end-18:end-9),fnm(end-7:end)],'InputFormat','yyyy-MM-ddHH-mm-SS');
+      case 'EnclosureTemp' 		% No Data
+	      error('Error: Station1 EnclosureTemp not converted to .mat')
+      case 'Young'
+        fileDate = @(fnm) datetime([fnm(end-18:end-9),fnm(end-7:end)],'InputFormat','yyyy-MM-ddHH-mm-SS');
+      case 'NetRadiometer'
+        fileDate = @(fnm) datetime([fnm(end-18:end-9),fnm(end-7:end)],'InputFormat','yyyy-MM-ddHH-mm-SS');
+      case 'Pyranometer'
+        fileDate = @(fnm) datetime([fnm(end-18:end-9),fnm(end-7:end)],'InputFormat','yyyy-MM-ddHH-mm-SS');
+      case 'HMP60'
+        fileDate = @(fnm) datetime([fnm(end-18:end-9),fnm(end-7:end)],'InputFormat','yyyy-MM-ddHH-mm-SS');
+      end
+    end
+  % case 'MZA_DELTA'  			% Currently not checked
+  %   % known prefixes to file names are: 'SMAST DELTA 2022', 'AFIT', and 'UMass Delta'
+  %   filedate = @(fnm) datetime(fnm(end-17:end-8),'InputFormat','yyyy-MM-dd');
+  %   file_path = strcat(filePathBase,dataStream,'/processed','/*Log.mat');
+  case 'NBAirport' 			    % Checked and Working
+    fileDate = @(fnm) datetime(fnm(end-3:end),'InputFormat','yyyy');
+  case 'NOAA_WaterT'
+    fileDate = @(fnm) datetime(fnm(10:17),'InputFormat','yyyyMMdd');
+  case 'OnsetHOBO'			% Checked and Working; same file name format for both SMAST and CBC
+    fileDate = @(fnm) datetime(fnm(10:28),'InputFormat','yyyy-MM-dd HH_mm_ss');
+  case 'RainwisePortLog' 		% Checked and working; same file name format for both SMAST, CBC, and MKIII
+    fileDate = @(fnm) datetime(fnm(19:26),'InputFormat','yyyyMMdd');
+  end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  if exist("fileDate","var")
+    fileDate = fileDate(fileName);
+  else
+    error("Error: In get_File_Date.m - Sensor: %s - %s not found", dataStream, subdataStream)
+  end
+
+end
