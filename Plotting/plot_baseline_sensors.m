@@ -43,8 +43,6 @@ close all
 printflag = true; % true => print figures to file
 spectraFlag = false; % Plot Spectra
 
-currentFile = mfilename('fullpath');
-[pathstr,~,~] = fileparts(currentFile);
 addpath('../Utilities');
 
 if(1)
