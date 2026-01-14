@@ -13,15 +13,6 @@
 %   Tide Range
 %   Solar Radiation & Net Radiometer
 %
-% Additionally can choose which data streams to include or not include:
-%   SMAST Tower
-%   SMAST Lattice
-%   SMAST HOBO
-%   CBC Tower
-%   CBC Lattice
-%   CBC HOBO
-%   NBAirport
-%
 % Created by Tyler D. Knapp, 01/29/2025 - Branched off of "plot_baseline_sensors.mat"
 % Edited by Tyler D. Knapp, 02/21/2025 - Removed extra functionallity, modified plots to seperate data
 
@@ -37,7 +28,6 @@ reprocessSome = 0;
 processAll = 0;
 spectrumPlots = 0;
 
-addpath('/usr2/MWBL/Analysis/');
 timeDuration = days(14); % Plotted time
 timeIteration = days(14); % Time between plots
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

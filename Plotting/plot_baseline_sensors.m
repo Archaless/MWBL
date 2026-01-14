@@ -33,8 +33,8 @@
 % Updated by Tyler D. Knapp, 09/11/2025 - Commenting out conversions to Northerly, now done in computeCn2.m
 % Updated by Tyler D. Knapp, 09/30/2025 - Modification to findSubList, T_Sonic is now plotted in Temperature plot
 % Updated by Tyler D. Knapp, 10/02/2025 - Changing HOBO plot to using WL, re-calculated in NAVD88 in csv2mat
-                                       % - Updating sensor list to include individual DataQ sensors
-                                       % - Added 'spectraFlag' to toggle anemometer spectra calc and plots
+                                      % - Updating sensor list to include individual DataQ sensors
+                                      % - Added 'spectraFlag' to toggle anemometer spectra calc and plots
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Preliminaries
@@ -42,8 +42,10 @@ clear
 close all
 printflag = true; % true => print figures to file
 spectraFlag = false; % Plot Spectra
-addpath('/usr2/MWBL/Analysis/');
-addpath('/mnt/MWBL/Analysis/');
+
+currentFile = mfilename('fullpath');
+[pathstr,~,~] = fileparts(currentFile);
+addpath('../Utilities');
 
 if(1)
   set(0,'DefaultAxesFontName','Times');

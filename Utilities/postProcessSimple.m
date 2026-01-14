@@ -27,7 +27,6 @@ dt_format = 'MM/dd/yyyy HH:mm:ss';
 start_date = datetime(start_date,'Format',dt_format);
 end_date = datetime(end_date,'Format',dt_format);
 
-addpath('/usr2/MWBL/Analysis/');
 outpath = '/usr2/MWBL/QA_QC_Analysis/';
 savepath = ([outpath,station,'_Analysis_',datestr(start_date,'mmddyyyy'),'_',datestr(end_date,'mmddyyyy'),'/']);
 mkdir(savepath);

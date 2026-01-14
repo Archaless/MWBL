@@ -74,7 +74,7 @@ end
   
   Version = "MWBL_data_csv2mat, 05/01/2025";
   failedList = Version + '\n';
-  addpath("/usr2/MWBL/Analysis")
+  addpath('../Conversion_Scripts');
 
   flags.reprocessAll = reprocessAll;
   flags.reprocessSome = reprocessSome;

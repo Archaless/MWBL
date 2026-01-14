@@ -44,7 +44,8 @@ end
   close all
   version = "MWBL_auto_plot, 09/29/2025";
   log = version + '\n';
-  addpath('/usr2/MWBL/Analysis/');
+  addpath('../Utilities');
+  addpath('../Plotting');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Modify dates to fit sunday 0:00 - saturday 23:59
   % endDate = datetime('now','Format','uuuu-MM-dd hh:mm:ss.sss');
