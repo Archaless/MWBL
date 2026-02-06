@@ -7,7 +7,7 @@
 
 function Verify_Daily_Files(startDate, endDate)
 arguments
-  startDate = datetime('today') - days(7)
+  startDate = datetime('today') - days(14)
   endDate = datetime('today') - minutes(1) % Go until 23:59 of previous day
 end
   % fileState = 'processed';

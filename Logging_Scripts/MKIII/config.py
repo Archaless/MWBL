@@ -3,6 +3,7 @@
 ###########################################################################
 # Python Libraries
 import os
+from urllib import response
 import requests
 from bs4 import BeautifulSoup
 from time import time, sleep
@@ -17,7 +18,7 @@ REQUIRED = ['device','connection','savePath'] # DO NOT REMOVE
 # Misc
 device = 'MKIII'
 backupDays = 30 # Days
-retryAttempts = 3
+retryAttempts = 10
 logTime = 'daily' # 'hourly' or 'daily'
 connection = [0x1a86, 0x7523] # VID and PID (if serial), otherwise use int for eth# or -1 for wlan0
 # Save Location Config:
@@ -45,7 +46,7 @@ baud = 9600 # CH340 Chip (USB Relay)
 vid = 0x1a86 # CH340 Chip (USB Relay)
 pid = 0x7523 # CH340 Chip (USB Relay)
 hostname_MKII = '192.168.0.169'
-timeStep = 1 # Seconds, how often to ping site
+timeStep = 15 # Seconds, how often to ping site
 timeout = 0.5 # Seconds, how long to wait for a response from sensor
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
 
@@ -56,32 +57,48 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
 def fetch(initArgs=None):
     # Send HTTP GET request
     url = 'http://' + hostname_MKII
-    response = requests.get(url, headers=headers, timeout=timeStep)
-    try:
-        response.raise_for_status()  # Raise an error for bad status codes
-    except:
-        reset_Connection(baud, vid, pid)
-        response = requests.get(url, headers=headers, timeout=timeStep)
-    # Parse HTML content
+
+    for attempt in range(retryAttempts):
+        session = requests.Session()
+        try:
+            response = session.get(
+                url,
+                headers=headers,
+                timeout=(3, 5)  # (connect timeout, read timeout)
+            )
+            response.raise_for_status()
+            break  # SUCCESS → exit retry loop
+        except (requests.exceptions.ConnectTimeout,
+                requests.exceptions.ConnectionError) as e:
+            print(f"[fetch] Connection failed (attempt {attempt+1}/{retryAttempts}): {e}")
+            reset_Connection(baud, vid, pid)
+            # exponential backoff, capped
+            sleep(30)
+        except requests.exceptions.HTTPError as e:
+            # Device responded but with bad status
+            print(f"[fetch] HTTP error: {e}")
+            raise
+        finally: # Ensure session is closed no matter what happens above
+            session.close()
+    else:
+        # ran out of retries
+        raise RuntimeError("Unable to connect to MKII after retries")
+    # ---- Parsing (unchanged, but now safe) ----
     soup = BeautifulSoup(response.text, 'html.parser')
-    # Extract visible text from the page
     text = soup.get_text(separator='\n', strip=True)
-    varList = text.split('\n')  # Divide string into a list
-    # Extract each variable (guard against parsing issues)
+    varList = text.split('\n')
     try:
-        air_temp = varList[17]
-        humidity = varList[30]
-        barometric_pressure = varList[43]
-        wind = varList[56]  # speed and direction separated by a comma
-        precipitation = varList[65]
-        solar_radiation = varList[70]
+        air_temp_DegF = varList[17]
+        humidity_Percent = varList[30]
+        barometric_pressure_InHg = varList[43]
+        wind_MiPHr_DegCompass = varList[56]   # speed and direction separated by a comma
+        precipitation_In = varList[65]
+        solar_radiation_WPM2 = varList[70]
     except Exception:
         raise IndexError(f'Unexpected HTML format, varList length: {len(varList)}')
-    # Save scraped text
-    data = str(time()) + ', ' + air_temp + ', ' + humidity + ', ' \
-        + barometric_pressure + ', ' + wind + ', ' + precipitation \
-        + ', ' + solar_radiation
-    # Pause
+    data = str(time()) + ', ' + air_temp_DegF + ', ' + humidity_Percent + ', ' \
+        + barometric_pressure_InHg + ', ' + wind_MiPHr_DegCompass + ', ' + precipitation_In \
+        + ', ' + solar_radiation_WPM2
     sleep(timeStep)
     return data
 

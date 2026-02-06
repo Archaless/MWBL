@@ -353,15 +353,8 @@ processAll = false;
                               % Save Plots %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   if saveFlag 
-    % Folder for year
-    folderName = char(datetime(endDate,'format','yyyy'));
-    saveDir = ['/usr2/MWBL/Analysis/Latest_Conditions/' folderName];
-    if ~exist(saveDir, 'dir')
-      mkdir(saveDir)
-    end
-    % Folder for month/day
-    folderName = [char(datetime(endDate,'format','yyyy')),'/',char(datetime(endDate,'format','yyyy-MM-dd'))];
-    saveDir = ['/usr2/MWBL/Analysis/Latest_Conditions/' folderName];
+    % Folder
+    saveDir = '/usr2/MWBL/Analysis/latest_conditions';
     if ~exist(saveDir, 'dir')
       mkdir(saveDir)
     end
@@ -369,14 +362,14 @@ processAll = false;
     for m = 1:itr
       figure(FigHandle(m));
       ax = gcf;
-      exportgraphics(ax,[saveDir '/' plotName{m} '.png'],'Resolution',300)
+      exportgraphics(ax,[saveDir '/' plotName{m} '.jpg'],'Resolution',300)
     end
     % Try to save spectrum plots
     for m = 95:99
       try
         figure(FigHandle(m));
         ax = gcf;
-        exportgraphics(ax,[saveDir '/' 'Pxx_' num2str(m) '.png'],'Resolution',300)
+        exportgraphics(ax,[saveDir '/' 'Pxx_' num2str(m) '.jpg'],'Resolution',300)
       end
     end
 

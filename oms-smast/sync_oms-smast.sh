@@ -61,3 +61,13 @@ for folderPath in $parentPath/*/; do # folderPath ex. /usr2/MWBL/Data/Lattice_CB
     zip -r -q "$folderPath$folderName.zip" "$zipPath_MWBL"
     scp "$folderPath$folderName.zip" "$username@$hostname:$zipPath_OMS"
 done
+
+# Sync latest condition images
+folderPath_MWBL="/usr2/MWBL/Analysis/latest_conditions/*.jpg"
+folderPath_OMS="/var/www/html/oms-smast/latest_conditions/"
+datePath_MWBL="/usr2/MWBL/Analysis/latest_conditions/date.txt"
+# Write current date/time to file
+date +"%Y-%m-%d %H:%M:%S" > "$datePath_MWBL"
+# Copy processed data to OMS server
+scp $folderPath_MWBL "$username@$hostname:$folderPath_OMS" # NOTE: $folderPath_MWBL must be a literal not a string
+scp "$datePath_MWBL" "$username@$hostname:$folderPath_OMS"
