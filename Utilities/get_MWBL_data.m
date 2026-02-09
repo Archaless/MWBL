@@ -132,14 +132,16 @@ function [data, errorLog] = get_MWBL_data(startDate, endDate, dataStream, subdat
     disp(['  Loading file ',filename] );
     try
       datetime_tmp = load([fileList(n).folder,'/',filename],'date_time');
-      case_1 = datetime_tmp.date_time(1) >= startDate && datetime_tmp.date_time(1) <= endDate;
-      case_2 = datetime_tmp.date_time(end) >= startDate && datetime_tmp.date_time(end) <= endDate;
+      startDate_tmp = datetime_tmp.date_time(1);
+      endDate_tmp = datetime_tmp.date_time(end);
+      inRange = (startDate_tmp >= startDate && startDate_tmp <= endDate) || ...
+                (endDate_tmp >= startDate && endDate_tmp <= endDate) || ...
+                (startDate_tmp <= startDate && endDate_tmp >= endDate);
     catch
       warning('In get_MWBL_data, variable "datetime" not found/empty')
-      case_1 = 1; % Fallback, read in data if error triggered above
-      case_2 = 1;
+      inRange = 1; % Fallback, read in data if error triggered above
     end
-    if case_1 || case_2
+    if inRange
       counter = counter + 1;
       thisData = load([fileList(n).folder,'/',filename]);
   

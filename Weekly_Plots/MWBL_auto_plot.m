@@ -44,8 +44,13 @@ end
   close all
   version = "MWBL_auto_plot, 09/29/2025";
   log = version + '\n';
-  addpath('../Utilities');
-  addpath('../Plotting');
+  Path = pwd;
+  if ~(Path(end-3:end) == "MWBL")
+    cd('..')
+  end
+  addpath('Weekly_Plots')
+  addpath('Utilities');
+  addpath('Plotting');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Modify dates to fit sunday 0:00 - saturday 23:59
   % endDate = datetime('now','Format','uuuu-MM-dd hh:mm:ss.sss');
@@ -94,8 +99,8 @@ end
   Sensors.name{15} = 		  'KZScintillometer'; Sensors.dataStream{15} = 'KZScintillometer'; Sensors.subdataStream{15} = [];
   Sensors.name{16} = 		  'NBAirport';        Sensors.dataStream{16} = 'NBAirport';        Sensors.subdataStream{16} = [];
   Sensors.name{17} = 		  'NOAA_WaterT';      Sensors.dataStream{17} = 'NOAA_WaterT';      Sensors.subdataStream{17} = [];
-  Sensors.name{18} = 		  'HOBO_SMAST';       Sensors.dataStream{18} = 'OnsetHOBO';        Sensors.subdataStream{18} = '21265947';
-  Sensors.name{19} = 		  'HOBO_CBC';         Sensors.dataStream{19} = 'OnsetHOBO';        Sensors.subdataStream{19} = '21265946';
+  Sensors.name{18} = 		  'HOBO_SMAST';       Sensors.dataStream{18} = 'OnsetHOBO';        Sensors.subdataStream{18} = 'SMAST';
+  Sensors.name{19} = 		  'HOBO_CBC';         Sensors.dataStream{19} = 'OnsetHOBO';        Sensors.subdataStream{19} = 'CBC';
   Sensors.name{20} = 		  'Ambilabs_2WIN';    Sensors.dataStream{20} = 'Ambilabs_2WIN';    Sensors.subdataStream{20} = [];
   Sensors.name{21} = 		  'Ecotech_M9003';    Sensors.dataStream{21} = 'Ecotech_M9003';    Sensors.subdataStream{21} = [];
   Sensors.name{22} = 		  'AQMesh_2451070';   Sensors.dataStream{22} = 'AQMesh';           Sensors.subdataStream{22} = '2451070';

@@ -43,7 +43,12 @@ close all
 printflag = true; % true => print figures to file
 spectraFlag = false; % Plot Spectra
 
-addpath('../Utilities');
+Path = pwd;
+if ~(Path(end-3:end) == "MWBL")
+  cd('..')
+end
+addpath('Utilities');
+addpath('Plotting');
 
 if(1)
   set(0,'DefaultAxesFontName','Times');
@@ -60,8 +65,8 @@ end
 % this_start = datetime(2025,01,01);
 % this_end = datetime(2025,12,19);
 
-this_start = datetime(2024,07,17); 
-this_end = this_start + days(7);	% 7 days after start
+this_start = datetime(2026,01,21); 
+this_end = this_start + days(14);	% 7 days after start
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % The following automatically chops the requested date range into 7-day chunks for plotting
@@ -83,7 +88,7 @@ end_date_array(1:end) = end_date_array(1:end) - seconds(1);
 % Create list of data streams, plus list of which to load and plot
 struct('Sensors',[]);
 
-SensorList = [1,3:16,17:25,27]; % All currently active sensors
+SensorList = [18,19]; % All currently active sensors
 
 Sensors.name{1} = 		  'PortLog_SMAST';    Sensors.dataStream{1} = 'RainwisePortLog';   Sensors.subdataStream{1} = 'SMAST';
 Sensors.name{2} = 		  'PortLog_CBC';      Sensors.dataStream{2} = 'RainwisePortLog';   Sensors.subdataStream{2} = 'CBC';
@@ -102,8 +107,8 @@ Sensors.name{14} = 		  'Pyrano_CBC';       Sensors.dataStream{14} = 'Lattice';  
 Sensors.name{15} = 		  'KZScintillometer'; Sensors.dataStream{15} = 'KZScintillometer'; Sensors.subdataStream{15} = [];
 Sensors.name{16} = 		  'NBAirport';        Sensors.dataStream{16} = 'NBAirport';        Sensors.subdataStream{16} = [];
 Sensors.name{17} = 		  'NOAA_WaterT';      Sensors.dataStream{17} = 'NOAA_WaterT';      Sensors.subdataStream{17} = [];
-Sensors.name{18} = 		  'HOBO_SMAST';       Sensors.dataStream{18} = 'OnsetHOBO';        Sensors.subdataStream{18} = '21265947';
-Sensors.name{19} = 		  'HOBO_CBC';         Sensors.dataStream{19} = 'OnsetHOBO';        Sensors.subdataStream{19} = '21265946';
+Sensors.name{18} = 		  'HOBO_SMAST';       Sensors.dataStream{18} = 'OnsetHOBO';        Sensors.subdataStream{18} = 'SMAST';
+Sensors.name{19} = 		  'HOBO_CBC';         Sensors.dataStream{19} = 'OnsetHOBO';        Sensors.subdataStream{19} = 'CBC';
 Sensors.name{20} = 		  'Ambilabs_2WIN';    Sensors.dataStream{20} = 'Ambilabs_2WIN';    Sensors.subdataStream{20} = [];
 Sensors.name{21} = 		  'Ecotech_M9003';    Sensors.dataStream{21} = 'Ecotech_M9003';    Sensors.subdataStream{21} = [];
 Sensors.name{22} = 		  'AQMesh_2451070';   Sensors.dataStream{22} = 'AQMesh';           Sensors.subdataStream{22} = '2451070';

@@ -26,14 +26,14 @@
 % Run with: MWBL_auto_plot(datetime('now','Format','MMMM d, yyyy HH:mm:ss'),1,1,1,0,0,0)
 
 function MWBL_plot_latest_conditions()
-% Default to between today and two weeks ago
-endDate = datetime('today','Format','MMMM d, yyyy HH:mm:ss');
-showPlots = false; % true => display plots as they're created
-saveFlag = true; % true => save figures to file
-process = true;
-reprocessAll = false;
-reprocessSome = false;
-processAll = false;
+  % Default to between today and two weeks ago
+  endDate = datetime('today','Format','MMMM d, yyyy HH:mm:ss');
+  showPlots = false; % true => display plots as they're created
+  saveFlag = true; % true => save figures to file
+  process = true;
+  reprocessAll = false;
+  reprocessSome = false;
+  processAll = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                          % Preliminary Setup %
@@ -41,8 +41,13 @@ processAll = false;
   close all
   version = "MWBL_auto_plot, 09/29/2025";
   log = version + '\n';
-  addpath('../Utilities');
-  addpath('../Plotting');
+  Path = pwd;
+  if ~(Path(end-3:end) == "MWBL")
+    cd('..')
+  end
+  addpath('Weekly_Plots')
+  addpath('Utilities');
+  addpath('Plotting');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Modify dates to fit sunday 0:00 - saturday 23:59
   % endDate = datetime('now','Format','uuuu-MM-dd hh:mm:ss.sss');
@@ -86,12 +91,12 @@ processAll = false;
   Sensors.name{11} = 		  'HMP60_CBC';        Sensors.dataStream{11} = 'Lattice';          Sensors.subdataStream{11} = {'CBC';'HMP60'};
   Sensors.name{12} = 		  'Young_CBC';        Sensors.dataStream{12} = 'Lattice';          Sensors.subdataStream{12} = {'CBC';'Young'};
   Sensors.name{13} = 		  'NetRad_CBC';       Sensors.dataStream{13} = 'Lattice';          Sensors.subdataStream{13} = {'CBC';'NetRadiometer'};
-  Sensors.name{14} = 		  'Pyrano_CBC';        Sensors.dataStream{14} = 'Lattice';         Sensors.subdataStream{14} = {'CBC';'Pyranometer'};
+  Sensors.name{14} = 		  'Pyrano_CBC';       Sensors.dataStream{14} = 'Lattice';         Sensors.subdataStream{14} = {'CBC';'Pyranometer'};
   Sensors.name{15} = 		  'KZScintillometer'; Sensors.dataStream{15} = 'KZScintillometer'; Sensors.subdataStream{15} = [];
   Sensors.name{16} = 		  'NBAirport';        Sensors.dataStream{16} = 'NBAirport';        Sensors.subdataStream{16} = [];
   Sensors.name{17} = 		  'NOAA_WaterT';      Sensors.dataStream{17} = 'NOAA_WaterT';      Sensors.subdataStream{17} = [];
-  Sensors.name{18} = 		  'HOBO_SMAST';       Sensors.dataStream{18} = 'OnsetHOBO';        Sensors.subdataStream{18} = '21265947';
-  Sensors.name{19} = 		  'HOBO_CBC';         Sensors.dataStream{19} = 'OnsetHOBO';        Sensors.subdataStream{19} = '21265946';
+  Sensors.name{18} = 		  'HOBO_SMAST';       Sensors.dataStream{18} = 'OnsetHOBO';        Sensors.subdataStream{18} = 'SMAST';
+  Sensors.name{19} = 		  'HOBO_CBC';         Sensors.dataStream{19} = 'OnsetHOBO';        Sensors.subdataStream{19} = 'CBC';
   Sensors.name{20} = 		  'Ambilabs_2WIN';    Sensors.dataStream{20} = 'Ambilabs_2WIN';    Sensors.subdataStream{20} = [];
   Sensors.name{21} = 		  'Ecotech_M9003';    Sensors.dataStream{21} = 'Ecotech_M9003';    Sensors.subdataStream{21} = [];
   Sensors.name{22} = 		  'AQMesh_2451070';   Sensors.dataStream{22} = 'AQMesh';           Sensors.subdataStream{22} = '2451070';

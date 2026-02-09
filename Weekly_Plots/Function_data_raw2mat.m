@@ -74,7 +74,11 @@ end
   
   Version = "MWBL_data_csv2mat, 05/01/2025";
   failedList = Version + '\n';
-  addpath('../Conversion_Scripts');
+  Path = pwd;
+  if ~(Path(end-3:end) == "MWBL")
+    cd('..')
+  end
+  addpath('Conversion_Scripts');
 
   flags.reprocessAll = reprocessAll;
   flags.reprocessSome = reprocessSome;

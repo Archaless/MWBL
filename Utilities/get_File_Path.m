@@ -134,11 +134,10 @@ function filePath = get_File_Path(filePathBase, dataStream, subdataStream)
     else
       switch subdataStream
       case 'SMAST'
-        subdataStream = '21265947';
+        filePath = strcat(filePathBase,'OnsetHOBO_SMAST','/processed/','*.mat');
       case 'CBC'
-        subdataStream = '21265946';
+        filePath = strcat(filePathBase,'OnsetHOBO_CBC','/processed/','*.mat');
       end
-      filePath = strcat(filePathBase,dataStream,'/processed/*',subdataStream,'*.mat');
     end
   case 'RainwisePortLog'
     if isempty(subdataStream)

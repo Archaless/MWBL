@@ -31,8 +31,8 @@ end
   Sensors.name{10} = 		  'NOAA_WaterT';      Sensors.dataStream{10} = 'NOAA_WaterT';     Sensors.subdataStream{10} = [];
   Sensors.name{11} = 		  'DPL_SMAST';        Sensors.dataStream{11} = 'DPL';             Sensors.subdataStream{11} = 'SMAST';
   Sensors.name{12} = 		  'DPL_CBC';          Sensors.dataStream{12} = 'DPL';             Sensors.subdataStream{12} = 'CBC';
-  Sensors.name{13} = 		  'HOBO_SMAST';       Sensors.dataStream{13} = 'OnsetHOBO';       Sensors.subdataStream{13} = '21265947';
-  Sensors.name{14} = 		  'HOBO_CBC';         Sensors.dataStream{14} = 'OnsetHOBO';       Sensors.subdataStream{14} = '21265946';
+  Sensors.name{13} = 		  'HOBO_SMAST';       Sensors.dataStream{13} = 'OnsetHOBO';       Sensors.subdataStream{13} = 'SMAST';
+  Sensors.name{14} = 		  'HOBO_CBC';         Sensors.dataStream{14} = 'OnsetHOBO';       Sensors.subdataStream{14} = 'CBC';
   Sensors.name{15} = 		  'Ambilabs_2WIN';    Sensors.dataStream{15} = 'Ambilabs_2WIN';   Sensors.subdataStream{15} = [];
   Sensors.name{16} = 		  'Ecotech_M9003';    Sensors.dataStream{16} = 'Ecotech_M9003';   Sensors.subdataStream{16} = [];
   Sensors.name{17} = 		  'AQMesh_2451070';   Sensors.dataStream{17} = 'AQMesh';          Sensors.subdataStream{17} = '2451070';
