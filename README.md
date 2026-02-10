@@ -21,16 +21,16 @@ These conventions apply to all new code and should be followed when modifying ex
 
 ---
 
-1. Clarity over brevity
+1. Clarity over brevity:
    Code must be understandable without external explanation.
 
-2. Consistency is mandatory
+2. Consistency is mandatory:
    If multiple styles exist, this document defines the required one.
 
-3. Self-documenting code
+3. Self-documenting code:
    Naming and structure should minimize the need for comments.
 
-4. Explicitness over implicit behavior
+4. Explicitness over implicit behavior:
    Avoid assumptions, magic numbers, or hidden unit conversions.
 
 ---
