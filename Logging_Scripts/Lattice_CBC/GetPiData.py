@@ -4,7 +4,7 @@ import traceback
 from time import time
 from Helper_Scripts import sync_Clock
 from HTTP_Scripts import get_DataQ
-from Network_Scripts import connect2sys, sftp_Server
+from Network_Scripts import sftp_Server
 from Data_Transfer_Scripts import folder2folder, backup_Folder
 
 # Created by Tyler Knapp 12/01/2025 for CBC Lattice
@@ -55,7 +55,6 @@ backupEnd = time() - 24*60*60 * 60
 def main(argv=None):
     try:
         # Sync clock with Lattice Pi
-        connect2sys(hostname_Source)
         sync_Clock(hostname_Source, username_Source)
         print('~~~ Initializing File Transfer ~~~')
         print('Pulling/Pushing DataQ')
@@ -63,7 +62,6 @@ def main(argv=None):
                     sourcePath_DataQ, transferPath_DataQ, hostname_Transfer,
                     username_Transfer, password_Transfer, numFiles, logger)
         # Pull source data:
-        connect2sys(hostname_Source)
         sftp_Source = sftp_Server(hostname_Source, username_Source)
         sftp_Local = None
         print('Pulling ATI')
@@ -72,7 +70,6 @@ def main(argv=None):
         print('Pulling Enclosure Temp')
         folder2folder(sourcePath_ET, sftp_Source, localPath_ET, sftp_Local, logger)
         backup_Folder(sourcePath_ET, sftp_Source, localBackup_ET, backupEnd, logger)
-        connect2sys(hostname_Transfer)
         sftp_Transfer = sftp_Server(hostname_Transfer, username_Transfer)
         print('Pushing ATI')
         folder2folder(localPath_ATI, sftp_Local, transferPath_ATI, sftp_Transfer, logger)

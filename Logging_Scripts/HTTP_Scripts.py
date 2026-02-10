@@ -4,7 +4,7 @@ from time import time
 from bs4 import BeautifulSoup
 from requests.auth import HTTPDigestAuth
 from Helper_Scripts import make_Dir, is_File
-from Network_Scripts import sftp_Server, sftp_Server_wPass, sftp_IsFile, connect2sys
+from Network_Scripts import sftp_Server, sftp_Server_wPass, sftp_IsFile
 from Data_Transfer_Scripts import folder2folder, backup_Folder
 
 ###########################################################################
@@ -14,19 +14,15 @@ from Data_Transfer_Scripts import folder2folder, backup_Folder
 def get_DataQ(hostname_Source, username_Source, password_Source, localPath,
                localBackup, sourcePath, transferPath, hostname_Transfer,
                username_Transfer, password_Transfer, numFiles, logger):
-    connect2sys(hostname_Source)
     get_DataQ_Index(hostname_Source, username_Source, password_Source, 
                     localPath, sourcePath)
-    connect2sys(hostname_Transfer)
     filename_size = check_DataQ_Transfer(hostname_Transfer, username_Transfer,
                                           password_Transfer, transferPath, 
                                           localPath, numFiles, logger)
     filename = filename_size[0]
     size = filename_size[1]
-    connect2sys(hostname_Source)
     pull_DataQ(hostname_Source, username_Source, password_Source, localPath, 
                sourcePath, filename, size, logger)
-    connect2sys(hostname_Transfer)
     push_DataQ(hostname_Transfer, username_Transfer, password_Transfer,
                 localPath, localBackup, transferPath, logger)
 
@@ -117,11 +113,10 @@ def pull_DataQ(hostname_DataQ, username_DataQ, password_DataQ, localPath, source
                 raise ValueError('Failed Transfer of: ' + str(filename[i]) + '\n')
         else:
             raise ValueError('Failed Transfer of: ' + str(filename[i]) + '\n')
-        
+
 def push_DataQ(hostname_Transfer, username_Transfer, password_Transfer, localPath, localBackup,
                 transferPath, logger):
     backupTime = time() - 24*60*60 * 60
-    connect2sys(hostname_Transfer)
     sftp_Local = None
     if password_Transfer:
         sftp_Transfer = sftp_Server_wPass(hostname_Transfer, username_Transfer, password_Transfer)
