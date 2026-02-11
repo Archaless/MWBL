@@ -28,7 +28,7 @@ end
   end
   timeStep = date_time(find(~isnan(date_time),1,'first'));
   endTime = date_time(find(~isnan(date_time),1,'last'));
-  samplingFrequency = round(1/(median(diff(date_time),'omitnan')));	% (Hz)
+  samplingFrequency = 1/(median(diff(date_time),'omitnan'));	% (Hz)
   endIndx = [];
   % Pre-allocate arrays
   ensembleTime = [];

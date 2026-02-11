@@ -19,7 +19,7 @@
 function MKIII_csv2mat(fileName,inputDir,outputDir)
 arguments
   % Test a file as default
-  fileName = 'Rainwise_MK_W3425_20250930_SMAST.csv';
+  fileName = 'Rainwise_MK_W3425_20260210_SMAST.csv';
   inputDir = '/usr2/MWBL/Data/RainwisePortLog/raw/';
   outputDir = '/usr2/MWBL/Data/RainwisePortLog/processed/';
 end
@@ -31,13 +31,16 @@ end
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % specify the variables and units
   
-  MKvar={'date_time';'T_Air';'RelHumid';'Baro';'WindSpd';'WindDir';'Precip';'SRad'};%'T_Encl'};
+  MKvarIn={'date_time';'T_Air_F';'RelHumid_%';'Baro_InHg';'WindSpd_MiPHr';'WindDir_Deg';'Precip_In';'SRad_WPM2'};%'T_Encl'};
+  MKvarOut={'date_time';'T_Air';'RelHumid';'Baro';'WindSpd';'WindDir';'Precip';'SRad'};%'T_Encl'};
   additionalVar = {'Dew'; 'WS_Max'; 'SR_sum'; 'Volts';};
 
-  variables = {'date_time';                           'T_Air'; 'RelHumid'; 'Dew';  'Baro';'WindDir';                             'WindSpd';'WS_Max';'SRad';    'SR_sum';'Precip';'Volts';'u'; 'v'};
-  units =     {'Matlab formatted date and time (UTC)';'Deg C'; '%';        'Deg C';'mbar';'Compass Degrees (e.g. 360 => from N)';'m/s';    'm/s';   'Watts/m2';'J/m2';  'mm/hr'; 'Volts';'m/s';'m/s'};
+  variables = {'date_time';'T_Air';'RelHumid';'Dew';'Baro';'WindDir';'WindSpd';
+    'WS_Max';'SRad';'SR_sum';'Precip';'Volts';'u'; 'v'};
+  units = {'Matlab formatted date and time (UTC)';'Deg C';'%';'Deg C';'mbar';
+    'Compass Degrees (e.g. 360 => from N)';'m/s';'m/s';'Watts/m2';'J/m2';'mm/hr';'Volts';'m/s';'m/s'};
   
-  numvars = length(MKvar);
+  numvars = length(MKvarIn);
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   disp([' Reading ',fileName]);
@@ -52,24 +55,30 @@ end
   key = ["°";"%";'"';" mph";"°";'"';'W/m²';];
   for i = 1:numvars
     try
-      dataRaw.(MKvar{i}) = str2double(strrep(fileData{:,i},key(i-1),""));
+      dataRaw.(MKvarIn{i}) = str2double(strrep(fileData{:,i},key(i-1),""));
     catch % If data is already a number above will throw error
-      dataRaw.(MKvar{i}) = fileData{:,i};
+      dataRaw.(MKvarIn{i}) = fileData{:,i};
     end
   end
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Data Processing
-  dataOut = table;
-  % Average Data
-  for i = 2:length(MKvar)
-    [dataOut.(MKvar{1}),dataOut.(MKvar{i}),~] = ensembleAverage(dataRaw.(MKvar{1}),dataRaw.(MKvar{i}),samplePeriod);
-  end
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Convert units
-  dataOut.('T_Air') = (dataOut.('T_Air')-32)*5/9; % F => C
-  dataOut.('Baro') = dataOut.('Baro')*33.86389; % InHg => mBar
-  dataOut.('WindSpd') = dataOut.('WindSpd')*0.44704; % mph => m/s
-  dataOut.('Precip') = dataOut.('Precip')*25.4; % in => mm
+  dataAdj.('date_time') = dataRaw.('date_time'); % No change
+  dataAdj.('T_Air') = (dataRaw.('T_Air_F')-32)*5/9; % F => C
+  dataAdj.('RelHumid') = dataRaw.('RelHumid_%'); % No change
+  dataAdj.('Baro') = dataRaw.('Baro_InHg')*33.86389; % InHg => mBar
+  dataAdj.('WindSpd') = dataRaw.('WindSpd_MiPHr')*0.44704; % mph => m/s
+  dataAdj.('WindDir') = dataRaw.('WindDir_Deg'); % No change
+  dataAdj.('Precip') = dataRaw.('Precip_In')*25.4; % in => mm
+  dataAdj.('SRad') = dataRaw.('SRad_WPM2'); % No change
+  % Average Data
+  dataOut = table;
+  for i = 2:length(MKvarIn)
+    [dataOut.(MKvarOut{1}),dataOut.(MKvarOut{i}),~] = ...
+      ensembleAverage(dataAdj.(MKvarOut{1}),dataAdj.(MKvarOut{i}),samplePeriod);
+  end
   % Filter out spikes
   % Note: Limits are over the course of 5 minutes
   dataOut.('T_Air') = remove_spikes(dataOut.('T_Air'),10); % Sample (Air) Temp
@@ -81,10 +90,12 @@ end
   date_time = datetime(dataOut.date_time,'convertFrom','epochTime');
   date_time = datetime(date_time, "InputFormat","dd-MMM-yyyy HH:mm:ss");
   for n=2:numvars
-    eval([MKvar{n},' = dataOut{:,n};']);
+    eval([MKvarOut{n},' = dataOut{:,n};']);
   end
 
-  [u_corr,v_corr,WindDir_corr,WindSpd_corr] = compass_correction_function(date_time(1),date_time(end),'SMAST_PortLog',[],[],dataOut.WindDir,dataOut.WindSpd);
+  [u_corr,v_corr,WindDir_corr,WindSpd_corr] = ...
+    compass_correction_function(date_time(1),date_time(end),'SMAST_PortLog'...
+    ,[],[],dataOut.WindDir,dataOut.WindSpd);
   
   u = u_corr;
   v = v_corr;

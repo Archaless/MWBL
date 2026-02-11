@@ -19,22 +19,25 @@
 function MKIII_csv2mat(fileName,inputDir,outputDir)
 arguments
   % Test a file as default
-  fileName = 'Rainwise_MK_W3425_20250905_SMAST.csv';
+  fileName = 'Rainwise_MK_W3425_20250930_SMAST.csv';
   inputDir = '/usr2/MWBL/Data/RainwisePortLog/raw/';
   outputDir = '/usr2/MWBL/Data/RainwisePortLog/processed/';
 end
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   Version = 'KMIII_csv2mat, Version 09/09/2025';
   disp([Version, ' is running']);
-  
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
+  samplePeriod = 300; % seconds
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % specify the variables and units
   
-  MKvar={'date_time';'T_Air';'RelHumid';'Baro';'WindSpd';'WindDir';'Precip';'SRad'};%'T_Encl'};
-  additionalVar = {'Dew'; 'WS_Max'; 'SR_sum'; 'Volts'; 'Units'; 'Cksum';};
+  MKvar={'date_time';'T_Air_F';'RelHumid_%';'Baro_InHg';'WindSpd_MiPHr';'WindDir_Deg';'Precip_In';'SRad_WPM2'};%'T_Encl'};
+  additionalVar = {'Dew'; 'WS_Max'; 'SR_sum'; 'Volts';};
 
-  variables = {'date_time'; 'T_Air'; 'RelHumid'; 'Dew'; 'Baro'; 'WindDir'; 'WindSpd'; 'WS_Max'; 'SRad'; 'SR_sum'; 'Precip'; 'Volts'; 'Units'; 'Cksum';'u'; 'v'};
-  units = {'Matlab formatted date and time (UTC)';'Deg C';'%';'Deg C';'mbar';'Compass Degrees (e.g. 360 => from N)';'m/s';'m/s';'Watts/m2';'J/m2';'mm/hr';'Volts';'Units?';'Checksum';'m/s';'m/s'};
+  variables = {'date_time';'T_Air';'RelHumid';'Dew';'Baro';'WindDir';'WindSpd';
+    'WS_Max';'SRad';'SR_sum';'Precip';'Volts';'u'; 'v'};
+  units = {'Matlab formatted date and time (UTC)';'Deg C';'%';'Deg C';'mbar';
+    'Compass Degrees (e.g. 360 => from N)';'m/s';'m/s';'Watts/m2';'J/m2';'mm/hr';'Volts';'m/s';'m/s'};
   
   numvars = length(MKvar);
   
@@ -44,35 +47,46 @@ end
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Read data file as table
   fileData = readtable([inputDir,fileName],'PreserveVariableNames',true,'Delimiter',',');
-  dataOut = table;
-  dataOut.date_time = datetime(fileData{:,1},'convertfrom','epochtime');
+  dataRaw = table;
   % fileData = movevars(fileData, "date_time", 'before',"time (Sec. from Epoch)");
   % fileData.("time (Sec. from Epoch)") = [];
 
   key = ["°";"%";'"';" mph";"°";'"';'W/m²';];
-  for i = 2:numvars % Skip over first column (epoch time)
+  for i = 1:numvars
     try
-      eval(['dataOut.',MKvar{i},'  = str2double(strrep(fileData{:,i},key(i-1),""));']);
+      dataRaw.(MKvar{i}) = str2double(strrep(fileData{:,i},key(i-1),""));
     catch % If data is already a number above will throw error
-      eval(['dataOut.',MKvar{i},'  = fileData{:,i};']);
+      dataRaw.(MKvar{i}) = fileData{:,i};
     end
   end
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Data Processing
+  dataOut = table;
+  % Average Data
+  dataAdj = dataRaw;
+  dataAdj.('T_Air') = (dataOut.('T_Air')-32)*5/9; % F => C
+  dataOdataAdjut.('Baro') = dataOut.('Baro')*33.86389; % InHg => mBar
+  dataOut.('WindSpd') = dataOut.('WindSpd')*0.44704; % mph => m/s
+  dataOut.('Precip') = dataOut.('Precip')*25.4; % in => mm
+  for i = 2:length(MKvar)
+    [dataOut.(MKvar{1}),dataOut.(MKvar{i}),~] = ensembleAverage(dataRaw.(MKvar{1}),dataRaw.(MKvar{i}),samplePeriod);
+  end
+  % Convert units
   dataOut.('T_Air') = (dataOut.('T_Air')-32)*5/9; % F => C
   dataOut.('Baro') = dataOut.('Baro')*33.86389; % InHg => mBar
-  dataOut.('WindSpd') = dataOut.('WindSpd')*0.44704; % MP => m/s
-  dataOut.('Precip') = dataOut.('Precip')
+  dataOut.('WindSpd') = dataOut.('WindSpd')*0.44704; % mph => m/s
+  dataOut.('Precip') = dataOut.('Precip')*25.4; % in => mm
   % Filter out spikes
-  % Note: Limits are over the course of 1 second
-  dataOut.('T_Air') = remove_spikes(dataOut.('T_Air'),1); % Sample (Air) Temp
-  dataOut.('RelHumid') = remove_spikes(dataOut.('RelHumid'),3); % Relative Humidity
-  dataOut.('Baro') = remove_spikes(dataOut.('Baro'),3); % Barometric Pressure
+  % Note: Limits are over the course of 5 minutes
+  dataOut.('T_Air') = remove_spikes(dataOut.('T_Air'),10); % Sample (Air) Temp
+  dataOut.('RelHumid') = remove_spikes(dataOut.('RelHumid'),10); % Relative Humidity
+  dataOut.('Baro') = remove_spikes(dataOut.('Baro'),10); % Barometric Pressure
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Parse all variables from table format to array format
-  date_time = datetime(dataOut.date_time, "InputFormat","dd-MMM-yyyy HH:mm:ss");
+  date_time = datetime(dataOut.date_time,'convertFrom','epochTime');
+  date_time = datetime(date_time, "InputFormat","dd-MMM-yyyy HH:mm:ss");
   for n=2:numvars
     eval([MKvar{n},' = dataOut{:,n};']);
   end

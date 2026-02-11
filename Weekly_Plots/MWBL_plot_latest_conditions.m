@@ -73,9 +73,6 @@ function MWBL_plot_latest_conditions()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Create list of data streams, plus list of which to load and plot
   struct('Sensors',[]);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                         % Sensor Selection %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Note: Sensors.name should not contain any spaces because it is used as a varible name later
   % Note(2): These have been re-arranged for MWBL_auto_plot
   Sensors.name{1} = 		  'PortLog_SMAST';    Sensors.dataStream{1} = 'RainwisePortLog';   Sensors.subdataStream{1} = 'SMAST';
@@ -107,8 +104,8 @@ function MWBL_plot_latest_conditions()
   Sensors.name{27} = 		  'DPL_SMAST';        Sensors.dataStream{27} = 'DPL';              Sensors.subdataStream{27} = 'SMAST';
   % Sensors.name{28} = 		  'DPL_CBC';          Sensors.dataStream{28} = 'DPL';              Sensors.subdataStream{28} = 'CBC';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  % The following is based on /usr2/MWBL/Analysis/TKnapp/Organizing_Sensor_Plots.ods
-  % Set sensors to be grouped together for each set of plots
+                         % Sensor Selection %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   numGroups = 1;
   sensorGroup{1} = 1:27;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
