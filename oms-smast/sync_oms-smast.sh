@@ -12,7 +12,7 @@ hostname="134.88.228.97"
 
 for folderPath in $parentPath/*/; do
     folderName=$(basename "$folderPath")
-    if folderName == "Lattice_SMAST_Station1" || folderName == "Lattice_CBC_Station2" || folderName == "Misc_Data" || folderName == "NBAirport" || folderName == "EPA_PM25" || folderName == "NOAA_WaterT"; then
+    if [[ "$folderName" == "Lattice_SMAST_Station1" || "$folderName" == "Lattice_CBC_Station2" || "$folderName" == "Misc_Data" || "$folderName" == "NBAirport" || "$folderName" == "EPA_PM25" || "$folderName" == "NOAA_WaterT" || "$folderName" == "OnsetHOBO" ]]; then
         continue
     fi
     folderPath_MWBL="$folderPath/processed/*"
