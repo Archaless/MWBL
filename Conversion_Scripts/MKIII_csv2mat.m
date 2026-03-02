@@ -19,7 +19,7 @@
 function MKIII_csv2mat(fileName,inputDir,outputDir)
 arguments
   % Test a file as default
-  fileName = 'Rainwise_MK_W3425_20260210_SMAST.csv';
+  fileName = 'Rainwise_MK_W3425_20260220_SMAST.csv';
   inputDir = '/usr2/MWBL/Data/RainwisePortLog/raw/';
   outputDir = '/usr2/MWBL/Data/RainwisePortLog/processed/';
 end
@@ -31,9 +31,9 @@ end
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % specify the variables and units
   
-  MKvarIn={'date_time';'T_Air_F';'RelHumid_%';'Baro_InHg';'WindSpd_MiPHr';'WindDir_Deg';'Precip_In';'SRad_WPM2'};%'T_Encl'};
-  MKvarOut={'date_time';'T_Air';'RelHumid';'Baro';'WindSpd';'WindDir';'Precip';'SRad'};%'T_Encl'};
-  additionalVar = {'Dew'; 'WS_Max'; 'SR_sum'; 'Volts';};
+  MKvarIn={'date_time';'T_Air_F';'RelHumid_%';'Baro_InHg';'WindSpd_MiPHr';'WindDir_Deg';'Precip_In';'SRad_WPM2';'T_Encl';'Volts'};
+  MKvarOut={'date_time';'T_Air';'RelHumid';'Baro';'WindSpd';'WindDir';'Precip';'SRad';'T_Encl';'Volts'};
+  additionalVar = {'Dew'; 'WS_Max'; 'SR_sum';};
 
   variables = {'date_time';'T_Air';'RelHumid';'Dew';'Baro';'WindDir';'WindSpd';
     'WS_Max';'SRad';'SR_sum';'Precip';'Volts';'u'; 'v'};
@@ -52,7 +52,7 @@ end
   % fileData = movevars(fileData, "date_time", 'before',"time (Sec. from Epoch)");
   % fileData.("time (Sec. from Epoch)") = [];
 
-  key = ["°";"%";'"';" mph";"°";'"';'W/m²';];
+  key = ["°";"%";'"';" mph";"°";'"';'W/m²';'°';'v'];
   for i = 1:numvars
     try
       dataRaw.(MKvarIn{i}) = str2double(strrep(fileData{:,i},key(i-1),""));
@@ -73,6 +73,8 @@ end
   dataAdj.('WindDir') = dataRaw.('WindDir_Deg'); % No change
   dataAdj.('Precip') = dataRaw.('Precip_In')*25.4; % in => mm
   dataAdj.('SRad') = dataRaw.('SRad_WPM2'); % No change
+  dataAdj.('T_Encl') = (dataRaw.('T_Encl_F')-32)*5/9; % F => C
+  dataAdj.('Volts') = dataRaw.('Volts_V'); % No change
   % Average Data
   dataOut = table;
   for i = 2:length(MKvarIn)
@@ -81,9 +83,15 @@ end
   end
   % Filter out spikes
   % Note: Limits are over the course of 5 minutes
-  dataOut.('T_Air') = remove_spikes(dataOut.('T_Air'),10); % Sample (Air) Temp
-  dataOut.('RelHumid') = remove_spikes(dataOut.('RelHumid'),10); % Relative Humidity
-  dataOut.('Baro') = remove_spikes(dataOut.('Baro'),10); % Barometric Pressure
+  try
+    dataOut.('T_Air') = remove_spikes(dataOut.('T_Air'),10); % Sample (Air) Temp
+  end
+  try
+    dataOut.('RelHumid') = remove_spikes(dataOut.('RelHumid'),10); % Relative Humidity
+  end
+  try
+    dataOut.('Baro') = remove_spikes(dataOut.('Baro'),10); % Barometric Pressure
+  end
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Parse all variables from table format to array format

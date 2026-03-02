@@ -1,4 +1,4 @@
-function ATI_raw2mat(input_file,inputDir,outputDir)
+function ATI_raw2mat_noCorrections(input_file,inputDir,outputDir)
 %
 % Marine Wave Boundary Layer Analysis
 % Script for converting ATI sonic anemometer data files from .dat file to .mat format.
@@ -13,7 +13,7 @@ function ATI_raw2mat(input_file,inputDir,outputDir)
 %   u		- velocity (m/s)
 %   v		- velocity (m/s)
 %   w		- velocity (m/s)
-%   T_Sonic	- temperature (deg C)
+%   T_Air	- temperature (deg C)
 %   Cs		- speed of sound (m/s)
 %   x		- accelerometer (g)
 %   y		- accelerometer (g)
@@ -53,16 +53,14 @@ function ATI_raw2mat(input_file,inputDir,outputDir)
 % Revised by Steven Lohrenz, 7/21/2023 - Modified compass correction to account for different sensor names
 % Revised by Tyler Knapp, 03/13/2025 - Adjusted roll index from 8 to 7 digits
 % Revised by Tyler Knapp, 07/07/2025 - Added catch for faulty sensor (abs(U) > 50), added strip to remove trailing spaces, and removed unnecessary array pre-allocation
-% Revised by Tyler Knapp, 09/18/2025 - Fixed datetime check for SMAST sensor type
-% Revised by Tyler Knapp, 09/23/2025 - Changed T_Air to T_Sonic
 
 Version = 'ATI_csv2mat, Version 07/07/2025';
 disp([Version, ' is running']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% list the variables in the file (presumes we know these a prior)
-variables = {'date_time'; 'u'; 'v'; 'w'; 'T_Sonic'; 'Cs'; 'x'; 'y'; 'z'; 'Pitch'; 'Roll'; 'Tu' ; 'Tv'; 'Tw'; 'a'; 'WindSpd';'WindDir'};
-units = {'Matlab formatted datetime (UTC)';'m/s';'m/s';'m/s';'deg C';'m/s';'g';'g';'g';'degrees';'degrees';'deg C';'deg C'; 'deg C'; '[]'; 'm/s';'degrees'};
+% list the variables in the file (presumes we know these a priori)
+variables = {'date_time'; 'u'; 'v'; 'w'; 'T_Air'; 'Cs'; 'x'; 'y'; 'z'; 'Pitch'; 'Roll'; 'Tu' ; 'Tv'; 'Tw'; 'a';'WindSpd';'WindDir'};
+units = {'Matlab formatted datetime (UTC)';'m/s';'m/s';'m/s';'deg C'; 'm/s';'g';'g';'g';'degrees';'degrees';'deg C' ; 'deg C'; 'deg C'; '[]'; 'm/s';'degrees'};
 
 numvars = length(variables);
 
@@ -75,9 +73,10 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Get info about ATI .dat file, and open file
-disp(['   Reading ', [inputDir,input_file]]);
 fileInfo = dir([inputDir,input_file]);
 input_bytes = fileInfo.bytes;
+
+disp(['   Reading ',input_file]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Attempt to read the entire data file
@@ -143,8 +142,8 @@ raw_data = raw_data(goodIndex_2);
 raw_data_chr = char(raw_data);
 
 W_indx = strfind(raw_data_chr(1,:),'W');
-T_Sonic_indx = strfind(raw_data_chr(1,:),'T');
-T_Sonic_indx = T_Sonic_indx(1);  % To exclude multiple instances of 'T'
+T_Air_indx = strfind(raw_data_chr(1,:),'T');
+T_Air_indx = T_Air_indx(1);  % To exclude multiple instances of 'T'
 Cs_indx = strfind(raw_data_chr(1,:),'C');
 x_indx = strfind(raw_data_chr(1,:),'X');
 y_indx = strfind(raw_data_chr(1,:),'Y');
@@ -158,8 +157,8 @@ a_indx = strfind(raw_data_chr(1,:),'a');
 
 u = str2num(raw_data_chr(:,U_indx+1:V_indx-1));
 v = str2num(raw_data_chr(:,V_indx+1:W_indx-1));
-w = str2num(raw_data_chr(:,W_indx+1:T_Sonic_indx-1));
-T_Sonic = str2num(raw_data_chr(:,T_Sonic_indx+1:T_Sonic_indx+6));
+w = str2num(raw_data_chr(:,W_indx+1:T_Air_indx-1));
+T_Air = str2num(raw_data_chr(:,T_Air_indx+1:T_Air_indx+6));
 
 if date_time(1) > datetime('2022-12-15 00:00:00.00000','InputFormat','yyyy-MM-dd HH:mm:ss.SSSSSS')
     Cs = str2num(raw_data_chr(:,Cs_indx+1:x_indx-1));
@@ -186,7 +185,7 @@ disp('   Read completed');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Check file size against number of characters
-numlines = size(date_time,1);
+numlines = length(date_time);
 bytesread = numlines.*data_charnum;	% Number of characters per line in data records
 pctread = bytesread./input_bytes;
 
@@ -198,43 +197,43 @@ else
   warning(['**** Warning: could not read full ATI data file ****',num2str(100*pctread),'% read'])
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Dates of any angle adjustments
-beginTime = datetime('2000-01-01 00:00:00.000000', 'InputFormat', 'yyyy-MM-dd HH:mm:ss.SSSSSS');
-sensorFlipTime = datetime('2022-02-11 00:00:00.000000','InputFormat','yyyy-MM-dd HH:mm:ss.SSSSSS'); % date of flipping sensor right side up
-if date_time(1) > beginTime && date_time(end) <= sensorFlipTime
-  for n = 1:numlines
-    if isbetween(date_time(n),beginTime,sensorFlipTime)
-      v(n) = -v(n);
-      w(n) = -w(n);
-    else
-      % Do nothing
-    end
-  end
-end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Compass Correction
-if date_time(end) < datetime('2023-06-08 13:00:00','InputFormat','yyyy-MM-dd HH:mm:ss') && contains(input_file,'Station1')
-    sensor = 'SMAST_Lattice_A';
-elseif date_time(end) >= datetime('2023-06-08 13:00:00','InputFormat','yyyy-MM-dd HH:mm:ss')...
-    && date_time(end) < datetime('2023-11-07 20:00:00','InputFormat','yyyy-MM-dd HH:mm:ss')  && contains(input_file,'Station1')
-    sensor = 'SMAST_Lattice_V';
-elseif date_time(end) >= datetime('2023-11-07 20:00:00','InputFormat','yyyy-MM-dd HH:mm:ss') && contains(input_file,'Station1')
-    sensor = 'SMAST_Lattice_A';
-elseif contains(input_file,'Station2')
-    sensor = 'CBC_Lattice_A';
-else
-  error('ERROR: In ATI_raw2mat.m: No Sensor Type set')
-end  
-
-% Compass correction function
-[u_corr,v_corr,WindDir_corr,WindSpd_corr] = compass_correction_function(date_time(1),date_time(end),sensor,u,v,[],[]);
-
-u = u_corr;
-v = v_corr;
-
-WindSpd = WindSpd_corr;
-WindDir = WindDir_corr;
+% Dates of any angle adjustments
+% beginTime = datetime('2000-01-01 00:00:00.000000', 'InputFormat', 'yyyy-MM-dd HH:mm:ss.SSSSSS');
+% sensorFlipTime = datetime('2022-02-11 00:00:00.000000','InputFormat','yyyy-MM-dd HH:mm:ss.SSSSSS'); % date of flipping sensor right side up
+% 
+% for n = 1:numlines
+%   if isbetween(date_time(n),beginTime,sensorFlipTime)
+%     v(n) = -v(n);
+%     w(n) = -w(n);
+%   else
+%     % Do nothing
+%   end
+% end
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % Compass Correction
+% if date_time(end) < datetime('2023-06-08 13:00:00','InputFormat','yyyy-MM-dd HH:mm:ss') && contains(input_file,'Station1')
+%     sensor = 'SMAST_Lattice_A';
+% elseif date_time(end) >= datetime('2023-06-08 13:00:00','InputFormat','yyyy-MM-dd HH:mm:ss') && contains(input_file,'Station1')
+%     sensor = 'SMAST_Lattice_V';
+% elseif date_time(end) >= datetime('2023-11-07 20:00:00','InputFormat','yyyy-MM-dd HH:mm:ss') && contains(input_file,'Station1')
+%     sensor = 'SMAST_Lattice_A';
+% elseif contains(input_file,'Station2')
+%     sensor = 'CBC_Lattice_A';
+% end  
+% 
+% % Compass correction function
+% [u_corr,v_corr,WindDir_corr,WindSpd_corr] = compass_correction_function(date_time(1),date_time(end),sensor,u,v,[],[]);
+% 
+% u = u_corr;
+% v = v_corr;
+% 
+% WindSpd = WindSpd_corr;
+% WindDir = WindDir_corr;
+[WindDir,WindSpd] = cart2pol(u,v);
+WindDir = WindDir*360/(2*pi);
+WindDir = single(WindDir);
+WindSpd = single(WindSpd);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Save this file to identically named .mat file
@@ -249,7 +248,7 @@ end
 disp(['   Saving output to ',outputDir,output_file])
 
 % save variable names and units
-save([outputDir,output_file],'variables','elevation','units','Version');
+save([outputDir,output_file],'variables','units','Version');
 
 % save variables themselves (appended)
 for n = 1:numvars

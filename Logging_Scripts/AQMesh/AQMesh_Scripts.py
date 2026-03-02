@@ -115,7 +115,6 @@ def next_request(savePath,printFlag=False):
                 export2csv(response, filename)
                 response = requests.get(pull_url, headers=header)
                 handle_status(response, printFlag)
-        if printFlag == True:
             print(f"Data saved to {filename}")
         
         # Second, pull particles:
@@ -129,13 +128,12 @@ def next_request(savePath,printFlag=False):
                 export2csv(response, filename)
                 response = requests.get(pull_url, headers=header)
                 handle_status(response, printFlag)
-        if printFlag == True:
             print(f"Data saved to {filename}")
 
 def repeat_request(savePath,printFlag=False):
     api_url = "https://api.aqmeshdata.net/api/LocationData/Repeat/"
-    # Read the token from file if it exists
-    with open("./token.json", "r") as f:
+        # Read the token from file if it exists
+    with open(f"{workingDir}token.json", "r") as f:
         token = f.read().strip()
     header = {"Authorization":f"Bearer {token}"}
     
@@ -147,24 +145,41 @@ def repeat_request(savePath,printFlag=False):
 
     # Now pull data for each location number
     datetimeStr = datetime.datetime.now().strftime("%Y%m%d%H%M%S") # Current date for filename
+    # Replace location number with device SN
     for location in siteLocs:
-        # First pull gases:
+        if location == 3773:
+            SN = "2451070"
+        elif location == 3774:
+            SN = "2451071"
+        else:
+            raise ValueError(f"Unexpected location number found: {location}")
+
+        # First, pull gases:
         pull_url = f"{api_url}{location}/1/01/0" # 1 indicates gases, 01 indicates Celsius and ug/m3, 0 indicates no Ethylene Oxide
         response = requests.get(pull_url, headers=header)
         handle_status(response, printFlag)
 
-        filename = f"{savePath}AQMesh_{location}_Gas_{datetimeStr}_repeat.csv"
+        filename = f"{savePath}aqmeshA-{SN}-{datetimeStr}.csv"
+
         with open(filename, "w") as f:
-            export2csv(response, filename)
+            while not response.text == "[]": # Keep pulling until no data is returned
+                export2csv(response, filename)
+                response = requests.get(pull_url, headers=header)
+                handle_status(response, printFlag)
+            print(f"Data saved to {filename}")
         
-        # Second pull particles:
+        # Second, pull particles:
         pull_url = f"{api_url}{location}/2/01/1" # 2 indicates particles, 01 indicates Celsius and ug/m3, 1 includes TPC
         response = requests.get(pull_url, headers=header)
         handle_status(response, printFlag)
 
-        filename = f"{savePath}AQMesh_{location}_Particle_{datetimeStr}_repeat.csv"
+        filename = f"{savePath}aqmeshP-{SN}-{datetimeStr}.csv"
         with open(filename, "w") as f:
-            export2csv(response, filename)
+            while not response.text == "[]": # Keep pulling until no data is returned
+                export2csv(response, filename)
+                response = requests.get(pull_url, headers=header)
+                handle_status(response, printFlag)
+            print(f"Data saved to {filename}")
 
 def SD_request(printFlag=False):
     api_url = "https://api.aqmeshdata.net/api/sensor/SensorDetail/1"

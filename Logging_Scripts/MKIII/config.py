@@ -36,7 +36,8 @@ titlePost = '_SMAST.csv'
 # File Header:
 header = 'time (Sec. from Epoch),air_temp (Deg. F),humidity (%)\
             ,barometric_pressure (inHg),wind speed (mph),wind direction (Deg.)\
-			,precipitation (in.),solar_radiation (W/m^2)\n'
+            ,precipitation (in.),solar_radiation (W/m^2),enclosure_temp (Deg. F)\
+            ,voltage (V)\n'
 
 ###########################################################################
                        ### Local Variables ###
@@ -62,6 +63,12 @@ def fetch(initArgs=None):
     soup = BeautifulSoup(response.text, 'html.parser')
     text = soup.get_text(separator='\n', strip=True)
     varList = text.split('\n')
+    if varList[12] != 'Rx Signal:':
+        print('No data is being received from the weather station!')
+        print('sleeping for a minute...')
+        sleep(60)
+        #reset_Connection(baud, vid, pid)
+        return None
     try:
         air_temp_DegF = varList[17]
         humidity_Percent = varList[30]
@@ -69,11 +76,16 @@ def fetch(initArgs=None):
         wind_MiPHr_DegCompass = varList[56]   # speed and direction separated by a comma
         precipitation_In = varList[65]
         solar_radiation_WPM2 = varList[70]
+        enclosure_Temp_DegF = varList[77]
+        voltage_V = varList[89]
     except Exception:
         raise IndexError(f'Unexpected HTML format, varList length: {len(varList)}')
+    #data = str(time()) + ', ' + air_temp_DegF + ', ' + humidity_Percent + ', ' \
+    #    + barometric_pressure_InHg + ', ' + wind_MiPHr_DegCompass + ', ' + precipitation_In \
+    #    + ', ' + solar_radiation_WPM2
     data = str(time()) + ', ' + air_temp_DegF + ', ' + humidity_Percent + ', ' \
         + barometric_pressure_InHg + ', ' + wind_MiPHr_DegCompass + ', ' + precipitation_In \
-        + ', ' + solar_radiation_WPM2
+        + ', ' + solar_radiation_WPM2 + ', ' + enclosure_Temp_DegF + ', ' + voltage_V
     sleep(timeStep)
     return data
 

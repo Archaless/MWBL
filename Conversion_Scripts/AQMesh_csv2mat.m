@@ -1,6 +1,6 @@
 function [] = AQMesh_csv2mat(inputFile,inputDir,outputDir)
 arguments
-  inputFile = 'aqmeshA_2451070_20251009094229.csv'
+  inputFile = 'aqmeshA-2451070-20260212050004.csv'
   inputDir = '/usr2/MWBL/Data/AQMesh/raw/'
   outputDir = '/usr2/MWBL/Data/AQMesh/processed/'
 end
@@ -153,29 +153,50 @@ else % API Formatting
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Read data file as table
   fileData2 = readtable([inputDir,inputFile2],'PreserveVariableNames',false);
-  eval([variables{18},' = fileData2.pm1_prescale;']);
-  eval([variables{19},' = fileData2.pm1_prescale;']);
-  eval([variables{20},' = fileData2.pm2_5_prescale;']);
-  eval([variables{21},' = fileData2.pm2_5_prescale;']);
-  eval([variables{22},' = fileData2.pm4_prescale;']);
-  eval([variables{23},' = fileData2.pm4_prescale;']);
-  eval([variables{24},' = fileData2.pm10_prescale;']);
-  eval([variables{25},' = fileData2.pm10_prescale;']);
-  eval([variables{26},' = fileData2.pm_total_prescale;']);
-  eval([variables{27},' = fileData2.pm_total_prescale;']);
-  try
-    eval([variables{28},' = fileData2.pm_tpc_prescale;']);
-    eval([variables{29},' = fileData2.pm_tpc_prescale;']);
-  catch
-    eval([variables{28},' = NaN(size(fileData2.pm_total_prescale));']);
-    eval([variables{29},' = NaN(size(fileData2.pm_total_prescale));']);
-    fprintf("No TPC found\n")
+  if ~isempty(fileData2)
+    eval([variables{18},' = fileData2.pm1_prescale;']);
+    eval([variables{19},' = fileData2.pm1_prescale;']);
+    eval([variables{20},' = fileData2.pm2_5_prescale;']);
+    eval([variables{21},' = fileData2.pm2_5_prescale;']);
+    eval([variables{22},' = fileData2.pm4_prescale;']);
+    eval([variables{23},' = fileData2.pm4_prescale;']);
+    eval([variables{24},' = fileData2.pm10_prescale;']);
+    eval([variables{25},' = fileData2.pm10_prescale;']);
+    eval([variables{26},' = fileData2.pm_total_prescale;']);
+    eval([variables{27},' = fileData2.pm_total_prescale;']);
+    try
+      eval([variables{28},' = fileData2.pm_tpc_prescale;']);
+      eval([variables{29},' = fileData2.pm_tpc_prescale;']);
+    catch
+      eval([variables{28},' = NaN(size(fileData2.pm_total_prescale));']);
+      eval([variables{29},' = NaN(size(fileData2.pm_total_prescale));']);
+      fprintf("No TPC found\n")
+    end
+    % Following vars are in first raw file as well
+        % Following vars are in first raw file as well
+    eval([variables{30},' = fileData2.pressure;']);
+    eval([variables{31},' = fileData2.battery_voltage;']);
+    eval([variables{32},' = fileData2.humidity;']);
+    eval([variables{33},' = fileData2.temperature_c;']);
+  else % 02/12/26-02/16/26 Physical files were blank, adding case - TK
+    eval([variables{18},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{19},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{20},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{21},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{22},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{23},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{24},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{25},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{26},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{27},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{28},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{29},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{30},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{31},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{32},' = NaN(size(fileData.co_prescaled));']);
+    eval([variables{33},' = NaN(size(fileData.co_prescaled));']);
   end
-  % Following vars are in first raw file as well
-  eval([variables{30},' = fileData2.pressure;']);
-  eval([variables{31},' = fileData2.battery_voltage;']);
-  eval([variables{32},' = fileData2.humidity;']);
-  eval([variables{33},' = fileData2.temperature_c;']);
+   
 end
   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
