@@ -31,12 +31,12 @@ end
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % specify the variables and units
   
-  MKvarIn={'date_time';'T_Air_F';'RelHumid_%';'Baro_InHg';'WindSpd_MiPHr';'WindDir_Deg';'Precip_In';'SRad_WPM2';'T_Encl';'Volts'};
-  MKvarOut={'date_time';'T_Air';'RelHumid';'Baro';'WindSpd';'WindDir';'Precip';'SRad';'T_Encl';'Volts'};
+  MKvarIn={'date_time';'T_Air_F';'RelHumid_%';'Baro_InHg';'WindSpd_MiPHr';'WindDir_Deg';'Precip_In';'SRad_WPM2';'T_Encl_F';'Battery_V'};
+  MKvarOut={'date_time';'T_Air';'RelHumid';'Baro';'WindSpd';'WindDir';'Precip';'SRad';'T_Encl';'Battery_V'};
   additionalVar = {'Dew'; 'WS_Max'; 'SR_sum';};
 
   variables = {'date_time';'T_Air';'RelHumid';'Dew';'Baro';'WindDir';'WindSpd';
-    'WS_Max';'SRad';'SR_sum';'Precip';'Volts';'u'; 'v'};
+    'WS_Max';'SRad';'SR_sum';'Precip';'Battery_V';'u'; 'v'};
   units = {'Matlab formatted date and time (UTC)';'Deg C';'%';'Deg C';'mbar';
     'Compass Degrees (e.g. 360 => from N)';'m/s';'m/s';'Watts/m2';'J/m2';'mm/hr';'Volts';'m/s';'m/s'};
   
@@ -74,7 +74,7 @@ end
   dataAdj.('Precip') = dataRaw.('Precip_In')*25.4; % in => mm
   dataAdj.('SRad') = dataRaw.('SRad_WPM2'); % No change
   dataAdj.('T_Encl') = (dataRaw.('T_Encl_F')-32)*5/9; % F => C
-  dataAdj.('Volts') = dataRaw.('Volts_V'); % No change
+  dataAdj.('Battery_V') = dataRaw.('Battery_V'); % No change
   % Average Data
   dataOut = table;
   for i = 2:length(MKvarIn)

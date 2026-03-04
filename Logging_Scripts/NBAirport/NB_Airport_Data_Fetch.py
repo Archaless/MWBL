@@ -6,17 +6,14 @@ import os
 # Will automatically pull New Bedford Aitport Meteorlogical data from https://www.ncei.noaa.gov/oa/local-climatological-data/v2/access/
 # Should be added to user MWBL's crontab: 
 
-# Created by Chat-GPT, 08/21/2025
-# Modified by Tyler Knapp, 08/21/2025
-
-def NB_Airport_Data_Fetch(year = str(datetime.now().year)):
+def NB_Airport_Data_Fetch(year = str(datetime.now().year), token = 'pEhotRAaEElMkRBtJcIFwUQdfwCAMObh'):
     # "year" is an optional argument, default will download current year
     try:
         url = 'https://www.ncei.noaa.gov/oa/local-climatological-data/v2/access/' + year + '/LCD_USW00094726_' + year + '.csv'
         # Overwrite old file everytime, data can only be selected for a desired year from NOAA website
         save_path = '/usr2/MWBL/Data/NBAirport/raw/NB_Airport_' + year + '.csv'
         # Send HTTP GET request to the URL
-        response = requests.get(url, stream=True)
+        response = requests.get(url, headers = {'Token': token}, stream=True)
         response.raise_for_status()  # Raise exception for HTTP errors
 
         # Create directory if it doesn't exist
@@ -35,20 +32,22 @@ def NB_Airport_Data_Fetch(year = str(datetime.now().year)):
 
 # Main function to parse year argument and run function above
 if __name__ == '__main__':
-    if len(sys.argv) != 1 and len(sys.argv) != 2:
-        print('ERROR - Usage: python NB_Airport_Data_Fetch.py <year>')
+    if len(sys.argv) > 3:
+        print('ERROR - Usage: python NB_Airport_Data_Fetch.py <year> <token>(optional)')
         print('Received: ')
         for stuff in sys.argv:
             print(stuff)
         sys.exit(1)
     if len(sys.argv) == 1:
         NB_Airport_Data_Fetch()
+    elif len(sys.argv) == 2:
+        year = sys.argv[1]
+        NB_Airport_Data_Fetch(year)
     else:
         year = sys.argv[1]
+        token = sys.argv[2]
         NB_Airport_Data_Fetch(year)
 
 
 # Example usage:
-# file_url = 'https://example.com/sample.pdf'  # Replace with actual file URL
-# destination = '/path/to/your/folder/sample.pdf'  # Replace with your desired path
-# download_file(file_url, destination)
+# python NB_Airport_Data_Fetch.py 2026 pEhotRAaEElMkRBtJcIFwUQdfwCAMObh
