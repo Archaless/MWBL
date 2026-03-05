@@ -119,7 +119,9 @@ Rules:
 * Unit conversions must store results in new variables
 
 Example:
+
 pressure_LbsPIn2 = 120
+
 pressure_Pa = pressure_LbsPIn2 * 6894.76
 
 ---
