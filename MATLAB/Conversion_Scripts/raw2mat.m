@@ -184,6 +184,7 @@ function failedList = raw2mat(startDate,endDate,flags)
         else
           fname=FList(n).name;
         end
+        FList(n).name = fname;
   
         dataDate = get_File_Date(strip_char(FList(n).name),'Lattice',{'SMAST';'DataQ'}); % Doesn't matter what station
         fileDate = datetime(FList(n).date);
@@ -406,29 +407,31 @@ function failedList = raw2mat(startDate,endDate,flags)
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   if flags.OnsetHOBOFlag
     % Input filenames for reading
-    inputDir=[baseDir,'OnsetHOBO/raw/'];
-    outputDir=[baseDir,'OnsetHOBO/processed/'];
-    
-    % Retrieve file information
-    srchKey = '*.csv';
-    postFixLen = length(srchKey)-1;
-    FList=dir([inputDir,srchKey]);
-
-    % loop through list and convert files to .mat format
-    for n = 1:length(FList)
-      dataDate = get_File_Date(strip_char(FList(n).name),'OnsetHOBO',[]);
-      fileDate = datetime(FList(n).date);
-      filePath = [outputDir,FList(n).name(1:end-postFixLen),'.mat'];
-      fileProcessed = isfile(filePath);
-      if flags.reprocessAll || flags.processAll && (~fileProcessed || dir(filePath).date < fileDate) || ...
-          (flags.reprocessSome && (dataDate >=startDate && dataDate <=endDate )) || ...
-          ((dataDate >= startDate && dataDate <= endDate) && ~fileProcessed)
-        disp([' Converting Onset HOBO file ',num2str(n),' of ',num2str(length(FList))]);
-        try
-          OnsetHOBO_csv2mat(FList(n).name,inputDir,outputDir);
-        catch ME
-          warning(['HOBO: ',FList(n).name,', ',ME.message])
-          failedList = failedList + 'HOBO: ' + FList(n).name + ', ' + ME.message + '\n';
+    folders = ["OnsetHOBO";"OnsetHOBO_SMAST";"OnsetHOBO_CBC"];
+    for i = range(size(folders))
+      inputDir = char(baseDir+folders(i)+'/raw/');
+      outputDir = char(baseDir+folders(i)+'/processed/');
+      % Retrieve file information
+      srchKey = '*.csv';
+      postFixLen = length(srchKey)-1;
+      FList=dir([inputDir,srchKey]);
+  
+      % loop through list and convert files to .mat format
+      for n = 1:length(FList)
+        dataDate = get_File_Date(strip_char(FList(n).name),'OnsetHOBO',[]);
+        fileDate = datetime(FList(n).date);
+        filePath = [outputDir,FList(n).name(1:end-postFixLen),'.mat'];
+        fileProcessed = isfile(filePath);
+        if flags.reprocessAll || flags.processAll && (~fileProcessed || dir(filePath).date < fileDate) || ...
+            (flags.reprocessSome && (dataDate >=startDate && dataDate <=endDate )) || ...
+            ((dataDate >= startDate && dataDate <= endDate) && ~fileProcessed)
+          disp([' Converting Onset HOBO file ',num2str(n),' of ',num2str(length(FList))]);
+          try
+            OnsetHOBO_csv2mat(FList(n).name,inputDir,outputDir);
+          catch ME
+            warning(['HOBO: ',FList(n).name,', ',ME.message])
+            failedList = failedList + 'HOBO: ' + FList(n).name + ', ' + ME.message + '\n';
+          end
         end
       end
     end

@@ -435,19 +435,8 @@ if plotflag && printflag
   %% Override the above for saving figures to file
   figname = {'MWBL_plot_data_inventory'; 'MWBL_plot_data_inventory_MISSING'};
   for nn=1:2
-    if(saveFlag)
-      figure(nn)
-      set(gcf,'position',[800 350 800 700])
-    else
-      figure(nn)
-      set(gca,'position',[0.13 0.53 0.78 0.4])
-      set(gcf,'position',[800 350 800 700])
-    end
+    set(gcf,'position',[0 0 800 600])
     ax = gcf;
-    if nn == 1
-      exportgraphics(ax,['/usr2/MWBL/Analysis/Inventory_Plots/MWBL_plot_data_inventory_',char(datetime('today')),'.jpg'],'Resolution',300)
-    else
-      exportgraphics(ax,['/usr2/MWBL/Analysis/Inventory_Plots/MWBL_plot_data_inventory_MISSING_',char(datetime('today')),'.jpg'],'Resolution',300)
-    end
+    exportgraphics(ax,['/usr2/MWBL/Analysis/latest_conditions/MWBL_plot_data_inventory_latest.jpg'],'Resolution',300)
   end
 end

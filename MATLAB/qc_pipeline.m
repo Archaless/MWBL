@@ -1,0 +1,247 @@
+function df = qc_pipeline(filename)
+
+% limits, rateLimit = 0 => unlimited
+temp_C.max = 50; % C
+temp_C.min = -30; % C
+temp_C.rateLimit = 5; % deg. C per minute
+
+tempWater_C.max = 35; % C
+tempWater_C.min = -3; % C
+tempWater_C.rateLimit = 5; % deg. C per minute
+
+relHumid_Pct.max = 0; % Percent
+relHumid_Pct.min = 100; % Percent
+relHumid_Pct.min = 10; % Percent per minute
+
+windSpd_MPS.max = 50; % m/s (absolute)
+windSpd_MPS.min = 0; % m/s (absolute)
+windSpd_MPS.rateLimit = 0; % m/s^2 (absolute)
+
+windDir_Deg.max = 360; % deg.
+windDir_Deg.min = 0; % deg.
+windDir_Deg.rateLimit = 0; % deg.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% QC FLAG DEFINITIONS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+QC.GOOD = 0;
+QC.MISSING = 1;
+QC.RANGE_FAIL = 2;
+QC.SPIKE = 3;
+QC.PERSISTENCE = 4;
+QC.RATE_CHANGE = 5;
+QC.SPATIAL_FAIL = 6;
+QC.ML_ANOMALY = 7;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LOAD DATA
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+df = readtable(filename);
+
+df = sortrows(df,"timestamp");
+
+value = df.value;
+
+qc_flag = zeros(height(df),1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 1. MISSING VALUE CHECK
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+missing = isnan(value);
+qc_flag(missing) = QC.MISSING;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 2. RANGE CHECK
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+min_val = -80;
+max_val = 60;
+
+range_fail = (value < min_val) | (value > max_val);
+qc_flag(range_fail) = QC.RANGE_FAIL;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 3. HAMPEL SPIKE FILTER
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+spikes = hampel_filter(value,5,3);
+qc_flag(spikes) = QC.SPIKE;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 4. PERSISTENCE CHECK
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+persistence = persistence_check(value,10,1e-3);
+qc_flag(persistence) = QC.PERSISTENCE;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 5. RATE OF CHANGE CHECK
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+roc = rate_of_change(value,5);
+qc_flag(roc) = QC.RATE_CHANGE;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 6. SPATIAL CHECK
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if all(ismember({'lat','lon'},df.Properties.VariableNames))
+
+    spatial = spatial_check(df,0.1,5);
+    qc_flag(spatial) = QC.SPATIAL_FAIL;
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 7. ML ANOMALY DETECTION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ml = ml_anomaly_detection(value);
+qc_flag(ml) = QC.ML_ANOMALY;
+
+df.qc_flag = qc_flag;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% OPTIONAL CLEANED DATA
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+df.clean_value = value;
+bad = qc_flag ~= QC.GOOD;
+
+df.clean_value(bad) = NaN;
+
+df.clean_value = fillmissing(df.clean_value,'linear');
+
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% HAMPEL FILTER
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function flags = hampel_filter(series,window,n_sigma)
+
+n = length(series);
+flags = false(n,1);
+
+for i = window+1 : n-window
+
+    window_data = series(i-window:i+window);
+
+    med = median(window_data,'omitnan');
+
+    mad = median(abs(window_data-med),'omitnan');
+
+    if mad == 0
+        continue
+    end
+
+    threshold = n_sigma * 1.4826 * mad;
+
+    if abs(series(i)-med) > threshold
+        flags(i) = true;
+    end
+
+end
+
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PERSISTENCE CHECK
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function flags = persistence_check(series,window,tolerance)
+
+rolling_std = movstd(series,window,'omitnan');
+
+flags = rolling_std < tolerance;
+
+flags(isnan(flags)) = false;
+
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RATE OF CHANGE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function flags = rate_of_change(series,max_rate)
+
+diff_val = abs([0; diff(series)]);
+
+flags = diff_val > max_rate;
+
+flags(isnan(flags)) = false;
+
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SPATIAL CHECK
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function flags = spatial_check(df,radius,threshold)
+
+n = height(df);
+flags = false(n,1);
+
+for i = 1:n
+
+    lat_i = df.lat(i);
+    lon_i = df.lon(i);
+
+    neighbors = abs(df.lat-lat_i) < radius & ...
+                abs(df.lon-lon_i) < radius & ...
+                (1:n)' ~= i;
+
+    idx = find(neighbors);
+
+    if length(idx) < 2
+        continue
+    end
+
+    neighbor_mean = mean(df.value(idx),'omitnan');
+
+    if abs(df.value(i)-neighbor_mean) > threshold
+        flags(i) = true;
+    end
+
+end
+
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MACHINE LEARNING ANOMALY DETECTION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function flags = ml_anomaly_detection(series)
+
+flags = false(length(series),1);
+
+series(isnan(series)) = median(series,'omitnan');
+
+try
+
+    X = series;
+
+    model = iforest(X);
+
+    scores = anomalyScore(model,X);
+
+    threshold = prctile(scores,99);
+
+    flags = scores > threshold;
+
+catch
+
+    % if Isolation Forest toolbox not available
+    flags = false(length(series),1);
+
+end
+
+end

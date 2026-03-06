@@ -44,8 +44,9 @@ printflag = true; % true => print figures to file
 spectraFlag = false; % Plot Spectra
 
 Path = pwd;
-if ~(Path(end-3:end) == "MWBL")
+while ~(Path(end-5:end) == "MATLAB")
   cd('..')
+  Path = pwd;
 end
 addpath('Utilities');
 addpath('Plotting');

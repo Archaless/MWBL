@@ -42,8 +42,9 @@ function MWBL_plot_latest_conditions()
   version = "MWBL_auto_plot, 09/29/2025";
   log = version + '\n';
   Path = pwd;
-  if ~(Path(end-3:end) == "MWBL")
+  while ~(Path(end-5:end) == "MATLAB")
     cd('..')
+    Path = pwd;
   end
   addpath('Weekly_Plots')
   addpath('Utilities');
@@ -51,7 +52,7 @@ function MWBL_plot_latest_conditions()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Modify dates to fit sunday 0:00 - saturday 23:59
   % endDate = datetime('now','Format','uuuu-MM-dd hh:mm:ss.sss');
-  startDate = endDate - days(7) + minutes(1);
+  startDate = endDate - days(10) + minutes(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Defaults
   set(0,'DefaultAxesFontName','Times');

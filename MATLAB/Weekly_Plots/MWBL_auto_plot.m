@@ -45,8 +45,9 @@ end
   version = "MWBL_auto_plot, 09/29/2025";
   log = version + '\n';
   Path = pwd;
-  if ~(Path(end-3:end) == "MWBL")
+  while ~(Path(end-5:end) == "MATLAB")
     cd('..')
+    Path = pwd;
   end
   addpath('Weekly_Plots')
   addpath('Utilities');

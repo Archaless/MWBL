@@ -198,7 +198,7 @@ function [data, errorLog] = get_MWBL_data(startDate, endDate, dataStream, subdat
                 data.(var) = data.(var)(1);
     	        end
             else
-              if var ~= "checksum" && var ~= "Units" && var ~= "Variables" % Avoid re-writting misc info
+              if var ~= "checksum" && var ~= "Units" && var ~= "Variables" && var ~= "status_data" % Avoid writting misc info
                 if isfield(thisData,var)
                   data.(var) = [data.(var); thisData.(var)];
                 else
